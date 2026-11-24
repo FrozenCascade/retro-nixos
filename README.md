@@ -1,12 +1,11 @@
-# nixos-config
+# retro-nixos
 
-A NixOS flake for one laptop: Hyprland (configured in Lua), Home Manager, Stylix with Gruvbox, and a
-retro warm-industrial shell written in Quickshell. It aims at KDE-like function with a calm,
-easy-on-the-eyes look, and tries to stay light on memory and GPU.
+A NixOS flake for me personally: Hyprland, Home Manager, Stylix with Gruvbox, and a
+retro shell written in Quickshell. It aims at KDE-like functionality (I was mainly disliking how KDE handled some things) with a calm appearance, while light on memory and GPU. This was made with Claude AI btw (if it wasnt obvious).
 
-<!-- add a screenshot or two here: docs/bar.png, docs/launcher.png -->
+![Desktop](docs/Image.png)
 
-## What is in it
+## What is in this???
 
 - **Shell** (`home/frozen/quickshell`): top bar, launcher, calendar and planner, audio, display,
   connections, session and lock windows, screenshot and recording tools, a weather radar.
@@ -18,7 +17,7 @@ easy-on-the-eyes look, and tries to stay light on memory and GPU.
 
 ## Using it
 
-This is one person's config, so treat it as a source of ideas or fork it and edit. To try it:
+This is meant to be my config config, so just treat it as a source of ideas. To try it (not sure why you would):
 
 1. Change the user: `home/frozen/` and `modules/system/users.nix` (search the repo for `frozen`).
 2. Replace `hosts/elitebook/hardware-configuration.nix` with your own (`nixos-generate-config`).
@@ -41,7 +40,7 @@ If you clone it somewhere else, change `repoDir` in `home/frozen/quickshell.nix`
 ## Notes
 
 - Built on NixOS 26.05 (`nixos-26.05`) and Quickshell 0.3, tested on a single machine
-  (HP EliteBook, Intel graphics). Other hardware may need changes.
+  (HP EliteBook, Intel graphics). Other hardware likely will need changes and is unsupported.
 - The weather map uses CARTO tiles, which need a free key. Put it in `~/.config/carto-basemaps.key`.
   It is read at runtime and never stored in the repo.
 - Git identity, API keys and the Secure Boot keys (`/var/lib/sbctl`) live outside the repo on purpose.
