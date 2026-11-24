@@ -1,0 +1,11 @@
+.directory
+*.kate-swp
+
+result
+result-*
+*.zip
+*.key
+*.pem
+.direnv/
+__pycache__/
+*.pyc

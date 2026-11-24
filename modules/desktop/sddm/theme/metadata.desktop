@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Retro
+Description=The lock screen's look as a login screen: users, sessions, battery and power keys
+Author=frozen
+Version=1.0
+Type=sddm-theme
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=retro
+Theme-API=2.0
+QtVersion=6

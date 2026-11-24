@@ -1,0 +1,218 @@
+import QtQuick
+import qs
+import qs.components.shared
+import qs.components.bar.calendar
+import qs.components.bar.tools
+
+// Whatever is playing (Mpris): picture, title, seek bar and the transport buttons.
+// The same player is controlled from the bar (see StudioState for what each click and wheel does).
+Item {
+  id: tab
+
+  readonly property var p: StudioState.player
+  readonly property real coverSize: 230          // the album cover, a square
+
+  function clock(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    return m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60);
+  }
+
+  // the position is not pushed by players, so ask for it while the tab is showing
+  Timer {
+    interval: 500
+    repeat: true
+    running: tab.visible && StudioState.playing
+    onTriggered: {
+      if (tab.p)
+        tab.p.positionChanged();
+    }
+  }
+
+  Text {
+    anchors.centerIn: parent
+    width: parent.width - 40
+    visible: tab.p === null
+    horizontalAlignment: Text.AlignHCenter
+    wrapMode: Text.WordWrap
+    text: "NOTHING IS PLAYING\nSTART ANY PLAYER AND IT SHOWS UP HERE"
+    color: Theme.fgDim
+    font.family: Theme.fontMono
+    font.bold: true
+    font.pointSize: Theme.fontSize - 1
+  }
+
+  Column {
+    id: col
+    width: parent.width
+    spacing: 12
+    visible: tab.p !== null
+
+    SectionHead { width: parent.width; text: "PLAYER" }
+
+    Flow {
+      width: parent.width
+      spacing: 6
+
+      Repeater {
+        model: StudioState.players
+
+        MiniButton {
+          required property var modelData
+
+          text: String((Desktop.overrideAny([modelData.desktopEntry, modelData.identity]) || {}).name || modelData.identity).toUpperCase()
+          active: tab.p !== null && modelData.dbusName === tab.p.dbusName
+          onClicked: StudioState.wanted = modelData.dbusName
+        }
+      }
+    }
+
+    Row {
+      spacing: 14
+
+      Rectangle {
+        width: tab.coverSize
+        height: tab.coverSize
+        radius: Retro.corner
+        color: Retro.inset
+        border.width: Retro.borderWidth
+        border.color: Theme.fgDim
+        clip: true
+
+        Image {
+          anchors.fill: parent
+          anchors.margins: 2
+          asynchronous: true
+          fillMode: Image.PreserveAspectCrop
+          source: StudioState.art
+          visible: source !== ""
+        }
+
+        Text {
+          anchors.centerIn: parent
+          visible: StudioState.art === ""
+          text: Glyphs.music
+          color: Theme.fgDim
+          font.family: Theme.fontMono
+          font.pointSize: Theme.fontSize + 20
+        }
+      }
+
+      Column {
+        width: col.width - tab.coverSize - 14
+        spacing: 6
+
+        Text {
+          width: parent.width
+          wrapMode: Text.Wrap
+          maximumLineCount: 3
+          elide: Text.ElideRight
+          text: StudioState.title !== "" ? StudioState.title : "UNKNOWN TRACK"
+          color: Theme.fg
+          font.family: Theme.fontMono
+          font.bold: true
+          font.pointSize: Theme.fontSize + 1
+        }
+
+        Text {
+          width: parent.width
+          visible: StudioState.artist !== ""
+          elide: Text.ElideRight
+          text: StudioState.artist
+          color: Theme.yellow
+          font.family: Theme.fontMono
+          font.bold: true
+          font.pointSize: Theme.fontSize - 1
+        }
+
+        Text {
+          width: parent.width
+          visible: StudioState.album !== ""
+          elide: Text.ElideRight
+          text: StudioState.album
+          color: Theme.fgDim
+          font.family: Theme.fontMono
+          font.pointSize: Theme.fontSize - 2
+        }
+      }
+    }
+
+    // ---- seek ----
+    LineSlider {
+      width: parent.width
+      enabled: tab.p !== null && tab.p.canSeek && tab.p.lengthSupported
+      value: tab.p ? tab.p.position : 0
+      maxValue: tab.p && tab.p.length > 0 ? tab.p.length : 1
+      step: StudioState.seekSeconds
+      fill: Theme.orange
+      onMoved: v => {
+        if (tab.p && tab.p.canSeek)
+          tab.p.position = v;
+      }
+    }
+
+    Item {
+      width: parent.width
+      height: 16
+
+      Text {
+        anchors.left: parent.left
+        text: tab.p ? tab.clock(tab.p.position) : ""
+        color: Theme.fgDim
+        font.family: Theme.fontMono
+        font.bold: true
+        font.pointSize: Theme.fontSize - 2
+      }
+
+      Text {
+        anchors.right: parent.right
+        text: tab.p && tab.p.lengthSupported && tab.p.length > 0 ? tab.clock(tab.p.length) : ""
+        color: Theme.fgDim
+        font.family: Theme.fontMono
+        font.bold: true
+        font.pointSize: Theme.fontSize - 2
+      }
+    }
+
+    // ---- buttons ----
+    Row {
+      spacing: 8
+
+      MiniButton { text: Glyphs.skipPrevious; enabled: tab.p !== null && tab.p.canGoPrevious; onClicked: StudioState.previous() }
+      MiniButton { text: "-" + StudioState.seekSeconds; enabled: tab.p !== null && tab.p.canSeek; onClicked: StudioState.seekStep(-1) }
+      MiniButton { text: StudioState.playing ? Glyphs.pause : Glyphs.play; padX: 22; active: StudioState.playing; onClicked: StudioState.togglePlay() }
+      MiniButton { text: "+" + StudioState.seekSeconds; enabled: tab.p !== null && tab.p.canSeek; onClicked: StudioState.seekStep(1) }
+      MiniButton { text: Glyphs.skipNext; enabled: tab.p !== null && tab.p.canGoNext; onClicked: StudioState.next() }
+    }
+
+    // ---- the player's own volume ----
+    SectionHead { width: parent.width; text: "VOLUME" }
+
+    Row {
+      width: parent.width
+      spacing: 10
+
+      LineSlider {
+        width: parent.width - muteButton.width - parent.spacing
+        anchors.verticalCenter: parent.verticalCenter
+        enabled: tab.p !== null && tab.p.volumeSupported
+        value: tab.p && tab.p.volumeSupported ? tab.p.volume : 0
+        dim: StudioState.muted
+        fill: Theme.blue
+        onMoved: v => {
+          if (tab.p && tab.p.volumeSupported)
+            tab.p.volume = v;
+        }
+        onMuteKey: StudioState.toggleMute()
+      }
+
+      MiniButton {
+        id: muteButton
+        anchors.verticalCenter: parent.verticalCenter
+        text: "MUTE"
+        active: StudioState.muted
+        onClicked: StudioState.toggleMute()
+      }
+    }
+  }
+}
