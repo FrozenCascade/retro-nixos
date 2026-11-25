@@ -42,6 +42,7 @@
     ../../modules/applications/steam.nix
     ../../modules/applications/flatpak.nix
     ../../modules/applications/virtualisation.nix
+    ../../modules/applications/input-remapper.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -54,7 +55,7 @@
   networking.networkmanager.enable = true;
 
   # Set your time zone.
-  time.timeZone = "America/New_York";
+  time.timeZone = "America/Chicago";
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";

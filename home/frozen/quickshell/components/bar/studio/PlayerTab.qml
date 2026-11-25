@@ -153,6 +153,8 @@ Item {
               anchors.margins: tab.coverBox === "clear" ? 0 : 2
               asynchronous: true
               fillMode: Image.PreserveAspectCrop
+              sourceSize: Qt.size(width * 3, height * 3)   // decode at display size, not the full photo
+              cache: false                              // every track has its own picture
               source: StudioState.art
               visible: source !== ""
             }

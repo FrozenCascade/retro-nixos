@@ -6,7 +6,7 @@
 # the app made it. The bar, dock and overview read the same table (Desktop.override in the shell).
 # It runs at every login, so apps that finish installing later get their entry too.
 let
-  apps = (import ./settings.nix).apps or { };
+  apps = (import ./settings-load.nix { inherit lib; }).apps;
 
   # only apps that change something in the entry
   changed = lib.filterAttrs (_: a: a ? icon || a ? name || a ? comment || (a.bypassVpn or false) || (a.onlyCategories or false)) apps;

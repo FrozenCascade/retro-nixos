@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
@@ -112,7 +113,16 @@ PanelWindow {
   readonly property real menuAnchorY: bg.y
 
 
-  readonly property bool dockHovered: zoneHover.hovered || hoverItem !== null || draggingTask || menuOpen || LauncherState.open
+  // the launcher is open on this monitor (an unknown monitor counts as every monitor)
+  readonly property bool launcherHere: LauncherState.open && (LauncherState.screenName === "" || LauncherState.screenName === modelData.name)
+
+  // after the launcher closes, check where the pointer really is (see pointerCheck below)
+  onLauncherHereChanged: {
+    if (!launcherHere)
+      pointerTimer.restart();
+  }
+
+  readonly property bool dockHovered: zoneHover.hovered || hoverItem !== null || draggingTask || menuOpen || launcherHere
 
   onDockHoveredChanged: {
     if (dockHovered) {
@@ -435,6 +445,43 @@ PanelWindow {
       interval: 150
       repeat: false
       onTriggered: dock.shown = false
+    }
+
+    // A popup or a new window can swallow the "pointer left" events, which leaves the dock thinking it is
+    // still hovered. So once the launcher has closed, ask Hyprland where the pointer is: away from the dock,
+    // drop every hover and lower it.
+    Timer {
+      id: pointerTimer
+      interval: 450
+      repeat: false
+      onTriggered: pointerCheck.running = true
+    }
+
+    Process {
+      id: pointerCheck
+      command: ["hyprctl", "cursorpos", "-j"]
+
+      stdout: StdioCollector {
+        onStreamFinished: {
+          let p = null;
+          try {
+            p = JSON.parse(text);
+          } catch (e) {
+            return;
+          }
+
+          const s = dock.screen;
+          const left = s.x + (s.width - bg.width) / 2;
+          const slack = 8;
+          const over = p.x >= left - slack && p.x <= left + bg.width + slack
+            && p.y >= s.y + s.height - dock.dockHeight - dock.bottomGap - slack;
+
+          if (!over && !dock.launcherHere && !dock.menuOpen && !dock.draggingTask) {
+            dock.hoverItem = null;
+            dock.shown = false;
+          }
+        }
+      }
     }
 
     // ---- dock frame ----

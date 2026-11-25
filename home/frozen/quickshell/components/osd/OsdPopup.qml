@@ -32,7 +32,7 @@ Scope {
 
   Timer {
     id: hide
-    interval: 1400
+    interval: Settings.osdVisibleMs
     onTriggered: root.shown = false
   }
 

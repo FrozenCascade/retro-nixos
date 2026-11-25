@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import QtQuick
+import qs.components.shared
 
 // Live keyboard state from Hyprland: caps lock, the active layout, and switching layouts.
 // The layouts themselves are listed in settings.nix (Settings.keyboardLayouts).
@@ -49,7 +50,8 @@ Singleton {
       return;
 
     // caps lock is on if any keyboard says so
-    capsLock = keyboards.some(k => k.capsLock === true);
+    if (!capsLed.found)
+      capsLock = keyboards.some(k => k.capsLock === true);
 
     // the layout comes from the keyboard you typed on last
     const main = keyboards.find(k => k.main === true) || keyboards[0];
@@ -70,13 +72,24 @@ Singleton {
     }
   }
 
-  // Hyprland has no event for caps lock, so ask twice a second. Layout changes also arrive as an event.
+  // Hyprland has no event for caps lock. The keyboard's caps lock LED has the answer in a sysfs file, which is
+  // cheap to read twice a second. Without such a LED, ask Hyprland (`hyprctl devices`) twice a second instead.
+  // Layout changes arrive as an event either way.
+  SysfsPoll {
+    id: capsLed
+    find: "ls /sys/class/leds/*capslock/brightness 2>/dev/null"
+    interval: 500
+    onValuesChanged: root.capsLock = values.some(v => v > 0)
+  }
+
   Timer {
     interval: 500
-    running: true
+    running: capsLed.searched && !capsLed.found
     repeat: true
     onTriggered: root.refresh()
   }
+
+  Component.onCompleted: refresh()
 
   // after a switch: look again right away
   Timer {

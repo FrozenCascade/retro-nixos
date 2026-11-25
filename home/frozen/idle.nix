@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 # Two steps after a while without keyboard or mouse. hypridle watches for idleness and does not count while
 # something holds an idle inhibitor: the STAY AWAKE switch in the Session window, or a video player.
@@ -8,8 +8,9 @@
 # `qs ipc call lock sleep` locks first and suspends once the lock is really up (LockState.lockAndSuspend),
 # so waking the laptop shows the lock screen, never the desktop.
 let
-  lockMinutes = 9;                                   # change these to taste
-  suspendMinutes = 10;
+  settings = import ./settings-load.nix { inherit lib; };
+  lockMinutes = settings.power.lockMinutes;           # both are set in settings.nix (power)
+  suspendMinutes = settings.power.suspendMinutes;
 
   # hypridle runs these with a bare PATH, so say where `qs` lives
   qs = "PATH=/run/current-system/sw/bin:/etc/profiles/per-user/${config.home.username}/bin:$PATH qs ipc call lock";

@@ -37,6 +37,7 @@ Item {
         cache: false
         asynchronous: true
         fillMode: Image.PreserveAspectCrop
+        sourceSize: Qt.size(width * 3, height * 3)   // decode at display size, not the full photo
         source: SessionState.avatarUrl
       }
 

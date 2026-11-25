@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import QtQuick
 import qs
 import qs.components.shared
@@ -10,6 +11,8 @@ Scope {
   property bool open: false
   property bool pinned: false        // pinned: stays open when it loses focus
   onOpenChanged: {
+    if (open)
+      LauncherState.screenName = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "";
     LauncherState.open = open;
     if (!open)
       pinned = false;
@@ -229,6 +232,17 @@ Scope {
     maximumSize: Qt.size(implicitWidth, implicitHeight)
 
     property int catIndex: 0
+
+    // one step through the category list (the wheel over the sidebar). Clears the search, like a click does.
+    function stepCategory(step) {
+      const next = Math.max(0, Math.min(root.categories.length - 1, catIndex + step));
+      if (next === catIndex && search.text === "")
+        return;
+      catIndex = next;
+      search.text = "";
+      list.currentIndex = 0;
+      sidebar.reveal(next);
+    }
 
     // true once the window has had the keyboard, so it isn't closed before it ever got it
     property bool hadFocus: false
@@ -616,6 +630,15 @@ Scope {
         contentHeight: catColumn.implicitHeight + 2      // 2: the raised shadow under the last button
         boundsBehavior: Flickable.StopAtBounds
 
+        // scroll so that a category (button 34 high, 4 apart) is in view
+        function reveal(index) {
+          const top = index * 38;
+          if (top < contentY)
+            contentY = top;
+          else if (top + 36 > contentY + height)
+            contentY = top + 36 - height;
+        }
+
         Column {
           id: catColumn
           spacing: 4
@@ -695,10 +718,20 @@ Scope {
         }
       }
 
-      WheelScroll {
+      // the wheel over the categories switches category (up = the one above). A touchpad adds up small steps.
+      MouseArea {
+        id: catWheel
         anchors.fill: sidebar
-        view: sidebar
-        notchPixels: 60
+        acceptedButtons: Qt.NoButton
+        property real accum: 0
+
+        onWheel: wheel => {
+          accum += wheel.angleDelta.y;
+          while (Math.abs(accum) >= 120) {
+            win.stepCategory(accum > 0 ? -1 : 1);
+            accum -= accum > 0 ? 120 : -120;
+          }
+        }
       }
 
       // groove between the sidebar and the list
@@ -805,7 +838,7 @@ Scope {
           top: calcCard.visible ? calcCard.bottom : searchBox.bottom
           bottom: parent.bottom
           leftMargin: 8
-          rightMargin: 12
+          rightMargin: listBar.visible ? 12 + listBar.width + 4 : 12      // room for the bar, only when it shows
           topMargin: 10
           bottomMargin: 12
         }
@@ -1063,9 +1096,11 @@ Scope {
         notchPixels: 90
       }
 
+      // lines up with the right edge of the search box (both 12 from the panel edge)
       RetroScrollBar {
+        id: listBar
         target: list
-        anchors { left: list.right; leftMargin: 3; top: list.top; bottom: list.bottom }
+        anchors { right: parent.right; rightMargin: 12; top: list.top; bottom: list.bottom }
       }
 
       // A click anywhere inside the launcher puts the text cursor back in the search box.

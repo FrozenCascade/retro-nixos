@@ -1,6 +1,8 @@
 # One place for the things the Hyprland config and the Quickshell config both need to agree on.
 # Hyprland gets them as a `settings` table in its Lua config; Quickshell gets them as the
 # `Settings` singleton. Change a value here, rebuild, and both follow.
+# Only list what you change here. Every setting, with its default, is in settings.defaults.nix;
+# anything missing from this file comes from there (settings-load.nix merges and checks them).
 {
   externalMonitor = "HDMI-A-1";   # numbered workspaces 1..workspaceCount live here (and the top bar)
   laptopMonitor   = "eDP-1";      # the single laptop workspace lives here
@@ -101,5 +103,7 @@
     "spotify" = { name = "Spotify"; categories = [ "AudioVideo" ]; };
     "SpaceEngine" = { classes = [ "steam_app_314650" ]; name = "Space Engine"; icon = "spaceengine"; comment = "Photorealistic interactive 3D planetarium"; categories = [ "Steam" ]; onlyCategories = true; titleIcon = true; };
     "Universe Sandbox" = { classes = [ "steam_app_230290" ]; name = "Universe Sandbox"; icon = "kspaceduel"; comment = "Gravity and Space Simulator"; categories = [ "Steam" ]; onlyCategories = true; titleIcon = false; };
+    "input-remapper-gtk" = { name = "Input Remapper"; icon = "coolercontrol"; comment = "Remap mouse buttons, keyboards and controllers"; categories = [ "Utility" ]; };
+    "input-remapper-autoload" = { name = "Input Remapper Autoload"; icon = "coolercontrol"; comment = "Apply the saved Input Remapper presets"; categories = [ "System" ]; };
   } // steamApps;
 }

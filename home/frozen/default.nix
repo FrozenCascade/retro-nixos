@@ -60,6 +60,22 @@
   # Night light daemon, driven by the Display window (hyprctl hyprsunset ...)
   services.hyprsunset.enable = true;
 
+  # Input Remapper: apply the saved presets at login. The system service (modules/applications/
+  # input-remapper.nix) may still be starting, so a failed try is repeated a few times.
+  systemd.user.services.input-remapper-autoload = {
+    Unit = {
+      Description = "Apply Input Remapper presets";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.input-remapper}/bin/input-remapper-control --command autoload";
+      Restart = "on-failure";
+      RestartSec = 3;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
   xdg.systemDirs.data = [
     "/etc/profiles/per-user/frozen/share"
   ];

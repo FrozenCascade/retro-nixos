@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  settings = import ./settings.nix;
+  settings = import ./settings-load.nix { inherit lib; };
   toLua = import ./lib/lua.nix { inherit lib; };
 
   c = config.lib.stylix.colors;

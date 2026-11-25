@@ -16,8 +16,8 @@ PanelWindow {
   required property var modelData
   screen: modelData
 
-  readonly property real barHeight: 36
-  readonly property real revealHeight: 4        // hover strip at the top edge while hidden
+  readonly property real barHeight: Settings.barHeight
+  readonly property real revealHeight: Settings.barRevealHeight        // hover strip at the top edge while hidden
 
   // the workspace this monitor is showing
   readonly property var monitor: Hyprland.monitorFor(modelData)

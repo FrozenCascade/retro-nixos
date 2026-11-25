@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
 import QtQuick
+import qs.components.shared
 
 // Shared system numbers for the bar, the system popup, and anything later.
 Singleton {
@@ -144,6 +145,17 @@ Singleton {
   }
 
   // ---- temperature ----
+  // The sensor files are read directly. Only when none are found does the old script run instead.
+  SysfsPoll {
+    id: tempFiles
+    find: Tools.cpuTempFiles
+    interval: 3000
+    onValuesChanged: {
+      if (values.length > 0)
+        root.temp = Math.round(Math.max(...values) / 1000);
+    }
+  }
+
   Process {
     id: tempProc
     command: [Tools.cpuTemp]
@@ -155,7 +167,7 @@ Singleton {
 
   Timer {
     interval: 3000
-    running: true
+    running: tempFiles.searched && !tempFiles.found
     repeat: true
     triggeredOnStart: true
     onTriggered: {

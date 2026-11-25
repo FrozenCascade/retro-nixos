@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  settings = import ./settings.nix;
+  settings = import ./settings-load.nix { inherit lib; };
 
   # Live = ~/.config/quickshell links straight to the repo, so QML edits apply
   # instantly (Quickshell hot-reloads). Set false to copy into the Nix store instead.
@@ -81,6 +81,28 @@ let
     echo $((max / 1000))
   '';
 
+  # The sensor files cpuTempScript would read, one path per line. The shell reads them itself (SysfsPoll),
+  # which is cheaper than running the script every few seconds. Same sensors, same fallback.
+  cpuTempFilesScript = pkgs.writeShellScript "cpu-temp-files" ''
+    export PATH=${lib.makeBinPath [ pkgs.coreutils ]}
+    found=0
+    for h in /sys/class/hwmon/hwmon*; do
+      case "$(cat "$h/name" 2>/dev/null)" in
+        coretemp|k10temp|zenpower|cpu_thermal)
+          for t in "$h"/temp*_input; do
+            [ -r "$t" ] && { echo "$t"; found=1; }
+          done ;;
+      esac
+    done
+    if [ "$found" = 0 ]; then
+      for z in /sys/class/thermal/thermal_zone*; do
+        case "$(cat "$z/type" 2>/dev/null)" in
+          x86_pkg_temp|acpitz) echo "$z/temp" ;;
+        esac
+      done
+    fi
+  '';
+
   # Monitors and workspace count, shared with Hyprland (see settings.nix)
   settingsQml = ''
     pragma Singleton
@@ -98,6 +120,11 @@ let
       // Shown on the bar buttons, overview and blip. Optional: Desktop.qml has fallbacks.
       readonly property var    workspaceNames:  ${builtins.toJSON settings.workspaceNames}
       readonly property var    laptopName:      ${builtins.toJSON (settings.laptopName or null)}
+
+      // Bar and popups (settings.nix: bar, osd)
+      readonly property real   barHeight:       ${toString settings.bar.height}
+      readonly property real   barRevealHeight: ${toString settings.bar.revealHeight}
+      readonly property int    osdVisibleMs:    ${toString settings.osd.visibleMs}
 
       // The Stylix wallpaper, used by the lock screen
       readonly property string wallpaper:       "${toString config.stylix.image}"
@@ -135,6 +162,7 @@ let
       readonly property string qalc:    "${pkgs.libqalculate}/bin/qalc"
       readonly property string wlCopy:  "${pkgs.wl-clipboard}/bin/wl-copy"
       readonly property string cpuTemp: "${cpuTempScript}"
+      readonly property string cpuTempFiles: "${cpuTempFilesScript}"
       readonly property string curl:    "${pkgs.curl}/bin/curl"
       readonly property string fprintd: "${pkgs.fprintd}/bin"
       readonly property string ytDlp:   "${pkgs.yt-dlp}/bin/yt-dlp"
